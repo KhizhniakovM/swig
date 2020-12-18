@@ -16,7 +16,7 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 Swig is available through [CocoaPods](http://cocoapods.org). To install
 it, simply add the following line to your Podfile:
 
-    pod "Swig"
+    pod 'Swig', :git => 'https://github.com/KhizhniakovM/swig.git'
 
 ## Author
 
