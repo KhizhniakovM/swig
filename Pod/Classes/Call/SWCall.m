@@ -22,6 +22,7 @@
 @property (nonatomic, strong) SWRingback *ringback;
 @property (nonatomic) BOOL speaker;
 @property (nonatomic) BOOL mute;
+@property (nonatomic) BOOL hold;
 
 @end
 
@@ -339,7 +340,15 @@
     self.ringback = nil;
 }
 
-//-(void)setHold:(void(^)(NSError *error))handler;
+-(void)setHold {
+    if (!self.hold) {
+        pjsua_call_set_hold((int)self.callId, NULL);
+        self.hold = YES;
+    } else {
+        pjsua_call_update((int)self.callId, PJSUA_CALL_UNHOLD, NULL);
+        self.hold = NO;
+    }
+}
 //-(void)reinvite:(void(^)(NSError *error))handler;
 //-(void)transferCall:(NSString *)destination completionHandler:(void(^)(NSError *error))handler;
 //-(void)replaceCall:(SWCall *)call completionHandler:(void (^)(NSError *))handler;

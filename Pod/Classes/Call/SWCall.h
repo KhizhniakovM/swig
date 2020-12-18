@@ -54,7 +54,7 @@ typedef NS_ENUM(NSInteger, SWMediaState) {
 -(void)answer:(void(^)(NSError *error))handler;
 -(void)hangup:(void(^)(NSError *error))handler;
 
-//-(void)setHold:(void(^)(NSError *error))handler;
+-(void)setHold;
 //-(void)reinvite:(void(^)(NSError *error))handler;
 //-(void)transferCall:(NSString *)destination completionHandler:(void(^)(NSError *error))handler;
 //-(void)replaceCall:(SWCall *)call completionHandler:(void (^)(NSError *))handler;
