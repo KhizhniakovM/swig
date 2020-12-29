@@ -242,6 +242,9 @@
     if (handler) {
         handler(nil);
     }
+    
+    
+    pjsua_acc_del((int)self.accountId);
 }
 
 -(void)accountStateChanged {
