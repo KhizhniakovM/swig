@@ -472,7 +472,7 @@ static SWEndpoint *_sharedEndpoint = nil;
     }
 }
 
--(void)removeAccount:(SWAccount *)account {
+-(void)removeAccount:(SWAccount *)account completion:(void(^)(void))handler {
  
     if ([self lookupAccount:account.accountId]) {
     
@@ -480,6 +480,7 @@ static SWEndpoint *_sharedEndpoint = nil;
         [mutableArray removeObject:account];
         
         self.accounts = mutableArray;
+        handler();
     }
 }
 
@@ -553,7 +554,9 @@ static void SWOnRegState(pjsua_acc_id acc_id) {
         }
         
         if (account.accountState == SWAccountStateDisconnected) {
-            [[SWEndpoint sharedEndpoint] removeAccount:account];
+            [[SWEndpoint sharedEndpoint] removeAccount:account completion:^{
+                
+            }];
         }
     }
 }

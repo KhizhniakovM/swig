@@ -27,7 +27,9 @@ typedef NS_ENUM(NSInteger, SWAccountState) {
 @property (nonatomic, readonly, strong) SWAccountConfiguration *accountConfiguration;
 @property (nonatomic, readonly , assign, getter=isValid) BOOL valid;
 
--(void)configure:(SWAccountConfiguration *)configuration completionHandler:(void(^)(NSError *error))handler; //configure and add account
+-(void)configure:(SWAccountConfiguration *)configuration completionHandler:(void(^)(NSError *error))handler;
+-(void)modify:(SWAccountConfiguration *)configuration completionHandler:(void(^)(NSError *error))handler;
+
 -(void)connect:(void(^)(NSError *error))handler;
 -(void)disconnect:(void(^)(NSError *error))handler;
 

@@ -133,7 +133,45 @@
         }
     }
 }
-
+-(void)modify:(SWAccountConfiguration *)configuration completionHandler:(void(^)(NSError *error))handler {
+    self.accountConfiguration = configuration;
+    
+    NSString *tcpSuffix = @"";
+    
+    if ([[SWEndpoint sharedEndpoint] hasTCPConfiguration]) {
+        tcpSuffix = @";transport=TCP";
+    }
+    
+    pjsua_acc_config acc_cfg;
+    pjsua_acc_config_default(&acc_cfg);
+    
+    acc_cfg.id = [[SWUriFormatter sipUri:[self.accountConfiguration.address stringByAppendingString:tcpSuffix] withDisplayName:self.accountConfiguration.displayName] pjString];
+    acc_cfg.reg_uri = [[SWUriFormatter sipUri:[self.accountConfiguration.domain stringByAppendingString:tcpSuffix]] pjString];
+    acc_cfg.register_on_acc_add = self.accountConfiguration.registerOnAdd ? PJ_TRUE : PJ_FALSE;;
+    acc_cfg.publish_enabled = self.accountConfiguration.publishEnabled ? PJ_TRUE : PJ_FALSE;
+    acc_cfg.reg_timeout = kRegTimeout;
+    
+    acc_cfg.cred_count = 1;
+    acc_cfg.cred_info[0].scheme = [self.accountConfiguration.authScheme pjString];
+    acc_cfg.cred_info[0].realm = [self.accountConfiguration.authRealm pjString];
+    acc_cfg.cred_info[0].username = [self.accountConfiguration.username pjString];
+    acc_cfg.cred_info[0].data_type = PJSIP_CRED_DATA_PLAIN_PASSWD;
+    acc_cfg.cred_info[0].data = [self.accountConfiguration.password pjString];
+    
+    pj_status_t status;
+    status = pjsua_acc_modify(_accountId, &acc_cfg);
+    
+    if (status != PJ_SUCCESS) {
+        
+        NSError *error = [NSError errorWithDomain:@"Error adding account" code:status userInfo:nil];
+        
+        if (handler) {
+            handler(error);
+        }
+        
+        return;
+    }
+}
 -(void)connect:(void(^)(NSError *error))handler {
     
     //FIX: registering too often will cause the server to possibly return error
