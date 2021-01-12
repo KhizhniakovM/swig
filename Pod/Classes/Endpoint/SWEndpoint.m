@@ -54,7 +54,7 @@ static void SWOnNatDetect(const pj_stun_nat_detect_result *res);
 @property (nonatomic, copy) SWCallStateChangeBlock callStateChangeBlock;
 @property (nonatomic, copy) SWCallMediaStateChangeBlock callMediaStateChangeBlock;
 @property (nonatomic) pj_thread_t *thread;
-
+@property (nonatomic) pjsua_transport_id transportId;
 @end
 
 @implementation SWEndpoint
@@ -338,6 +338,7 @@ static SWEndpoint *_sharedEndpoint = nil;
         pjsip_transport_type_e transportType = (pjsip_transport_type_e)transport.transportType;
         
         status = pjsua_transport_create(transportType, &transportConfig, &transportId);
+        self.transportId = transportId;
         
         if (status != PJ_SUCCESS) {
             
@@ -352,6 +353,32 @@ static SWEndpoint *_sharedEndpoint = nil;
     }
     
     [self start:handler];
+}
+
+-(void)changeTransportConfiguration: (void(^)(NSError *error))handler {
+    pjsua_transport_close(self.transportId, true);
+    
+    for (SWTransportConfiguration *transport in self.endpointConfiguration.transportConfigurations) {
+        pj_status_t status;
+        pjsua_transport_config transportConfig;
+        pjsua_transport_id transportId;
+        
+        pjsua_transport_config_default(&transportConfig);
+        
+        pjsip_transport_type_e transportType = (pjsip_transport_type_e)transport.transportType;
+        
+        status = pjsua_transport_create(transportType, &transportConfig, &transportId);
+        self.transportId = transportId;
+        
+        if (status != PJ_SUCCESS) {
+            
+            NSError *error = [NSError errorWithDomain:@"Error creating pjsua transport" code:status userInfo:nil];
+            
+            if (handler) {
+                handler(error);
+            }
+        }
+    }
 }
 
 -(BOOL)hasTCPConfiguration {

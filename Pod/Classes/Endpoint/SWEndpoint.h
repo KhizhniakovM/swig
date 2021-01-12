@@ -36,6 +36,7 @@
 -(void)setIncomingCallBlock:(void(^)(SWAccount *account, SWCall *call))incomingCallBlock;
 -(void)setCallStateChangeBlock:(void(^)(SWAccount *account, SWCall *call))callStateChangeBlock;
 -(void)setCallMediaStateChangeBlock:(void(^)(SWAccount *account, SWCall *call))callMediaStateChangeBlock;
+-(void)changeTransportConfiguration: (void(^)(NSError *error))handler;
 
 -(void)keepAlive;
 
