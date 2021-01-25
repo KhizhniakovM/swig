@@ -356,7 +356,7 @@ static SWEndpoint *_sharedEndpoint = nil;
 }
 
 -(void)changeTransportConfiguration: (void(^)(NSError *error))handler {
-    pjsua_transport_close(self.transportId, true);
+    pjsua_transport_close(self.transportId, false);
     
     for (SWTransportConfiguration *transport in self.endpointConfiguration.transportConfigurations) {
         pj_status_t status;
