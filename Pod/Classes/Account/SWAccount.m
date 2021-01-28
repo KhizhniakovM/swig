@@ -92,6 +92,10 @@
     acc_cfg.cred_info[0].data_type = PJSIP_CRED_DATA_PLAIN_PASSWD;
     acc_cfg.cred_info[0].data = [self.accountConfiguration.password pjString];
     
+    
+    //==========
+    acc_cfg.vid_in_auto_show = PJ_TRUE;
+    
     if (!self.accountConfiguration.proxy) {
         acc_cfg.proxy_cnt = 0;
     }
@@ -346,6 +350,39 @@
     
     pjsua_call_id callIdentifier;
     pj_str_t uri = [[SWUriFormatter sipUri:URI fromAccount:self] pjString];
+    
+    status = pjsua_call_make_call((int)self.accountId, &uri, 0, NULL, NULL, &callIdentifier);
+    
+    if (status != PJ_SUCCESS) {
+        
+        error = [NSError errorWithDomain:@"Error hanging up call" code:0 userInfo:nil];
+    }
+    
+    else {
+        
+        SWCall *call = [SWCall callWithId:callIdentifier accountId:self.accountId inBound:NO];
+        
+        [self addCall:call];
+    }
+    
+    if (handler) {
+        handler(error);
+    }
+}
+
+-(void)makeVideoCall:(NSString *)URI completionHandler:(void(^)(NSError *error))handler {
+    pj_status_t status;
+    NSError *error;
+    
+    pjsua_call_id callIdentifier;
+    pj_str_t uri = [[SWUriFormatter sipUri:URI fromAccount:self] pjString];
+    
+    pjsua_call_vid_strm_op videoOptions;
+    videoOptions = PJSUA_CALL_VID_STRM_ADD;
+    
+    pjsua_call_vid_strm_op_param videoParam;
+    
+    pjsua_call_set_vid_strm(callIdentifier, videoOptions, &videoParam);
     
     status = pjsua_call_make_call((int)self.accountId, &uri, 0, NULL, NULL, &callIdentifier);
     
