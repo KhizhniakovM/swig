@@ -29,7 +29,7 @@ Pod::Spec.new do |s|
 
   s.dependency 'AFNetworking/Reachability', '~> 2.3'
   s.dependency 'libextobjc', '~> 0.4'
-  s.dependency 'pjsip-ios', '~> 0.1'
+  s.dependency 'pjsip'
   s.dependency 'CocoaLumberjack', '2.0.0-rc'
 
   s.xcconfig = {
