@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import "SWCallProtocol.h"
 #import "pjsua.h"
 #import "SWRingback.h"
@@ -42,16 +43,19 @@ typedef NS_ENUM(NSInteger, SWMediaState) {
 @property (nonatomic, readonly) SWCallState callState;
 @property (nonatomic, readonly) SWMediaState mediaState;
 @property (nonatomic, readonly) BOOL inbound;
+@property (nonatomic, readonly) BOOL isVideo;
 @property (nonatomic, readonly) BOOL missed;
 @property (nonatomic, readonly) NSDate *date;
 @property (nonatomic, readonly) NSTimeInterval duration; //TODO: update with timer
+
+@property UIView* winView;
 
 -(instancetype)initWithCallId:(NSUInteger)callId accountId:(NSInteger)accountId inBound:(BOOL)inbound;
 +(instancetype)callWithId:(NSInteger)callId accountId:(NSInteger)accountId inBound:(BOOL)inbound;
 
 -(SWAccount *)getAccount;
 
--(void)answer:(void(^)(NSError *error))handler;
+-(void)answer:(void(^)(NSError *error, pjsua_vid_win_info *windowInfo))handler;
 -(void)hangup:(void(^)(NSError *error))handler;
 
 -(void)setHold;

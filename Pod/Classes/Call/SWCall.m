@@ -53,6 +53,16 @@
     _callId = callId;
     _accountId = accountId;
     
+    // Check audio or video call
+    pjsua_call_info ci;
+    pjsua_call_get_info(callId, &ci);
+    
+    if (ci.rem_vid_cnt > 0) {
+        _isVideo = true;
+    } else {
+        _isVideo = false;
+    }
+    
     //configure ringback
     
     _ringback = [SWRingback new];
@@ -61,7 +71,7 @@
     
     //TODO: move to account to fix multiple call problem
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(returnToBackground:) name:UIApplicationWillResignActiveNotification object:nil];
-
+    
     return self;
 }
 
@@ -77,7 +87,7 @@
     call.missed = self.missed;
     call.date = [self.date copyWithZone:zone];
     call.duration = self.duration;
-
+    
     return call;
 }
 
@@ -93,7 +103,7 @@
     call.missed = self.missed;
     call.date = [self.date copyWithZone:zone];
     call.duration = self.duration;
-
+    
     return call;
 }
 
@@ -132,7 +142,7 @@
 }
 
 -(void)dealloc {
-
+    
     if (_notification) {
         [[UIApplication sharedApplication] cancelLocalNotification:_notification];
     }
@@ -283,7 +293,7 @@
 }
 
 -(void)contactChanged {
- 
+    
     pjsua_call_info info;
     pjsua_call_get_info((int)self.callId, &info);
     
@@ -294,24 +304,37 @@
 
 #pragma Call Management
 
--(void)answer:(void(^)(NSError *error))handler {
-    
+-(void)answer:(void(^)(NSError *error, UIView* window))handler {
+    NSError *setCategoryError;
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord error:&setCategoryError];
+        
     pj_status_t status;
     NSError *error;
     
     status = pjsua_call_answer((int)self.callId, PJSIP_SC_OK, NULL, NULL);
     
-    if (status != PJ_SUCCESS) {
+    int vid_idx;
+    pjsua_vid_win_id wid;
+    pjsua_vid_win_info winInfo;
+    
+    pjsua_call_info ci;
+    pjsua_call_get_info(self.callId, &ci);
+    
+    vid_idx = pjsua_call_get_vid_stream_idx(self.callId);
+    if (vid_idx >= 0) {
         
-        error = [NSError errorWithDomain:@"Error answering up call" code:0 userInfo:nil];
+        wid = ci.media[vid_idx].stream.vid.win_in;
+        pjsua_vid_win_get_info(wid, &winInfo);
     }
     
-    else {
+    if (status != PJ_SUCCESS) {
+        error = [NSError errorWithDomain:@"Error answering up call" code:0 userInfo:nil];
+    } else {
         self.missed = NO;
     }
-    
     if (handler) {
-        handler(error);
+        handler(error, (__bridge UIView *) winInfo.hwnd.info.ios.window);
     }
 }
 
@@ -354,7 +377,7 @@
 //-(void)replaceCall:(SWCall *)call completionHandler:(void (^)(NSError *))handler;
 
 -(void)toggleMute:(void(^)(NSError *error))handler {
-
+    
     pjsua_call_info callInfo;
     pjsua_call_get_info((int)self.callId, &callInfo);
     
@@ -389,7 +412,7 @@
     pj_str_t digits = [dtmf pjString];
     
     status = pjsua_call_dial_dtmf((int)self.callId, &digits);
-
+    
     if (status != PJ_SUCCESS) {
         error = [NSError errorWithDomain:@"Error sending DTMF" code:0 userInfo:nil];
     }

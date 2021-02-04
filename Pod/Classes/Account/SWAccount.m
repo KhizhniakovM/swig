@@ -95,6 +95,7 @@
     
     //==========
     acc_cfg.vid_in_auto_show = PJ_TRUE;
+    acc_cfg.vid_out_auto_transmit = PJ_TRUE;
     
     if (!self.accountConfiguration.proxy) {
         acc_cfg.proxy_cnt = 0;
@@ -137,6 +138,7 @@
         }
     }
 }
+
 -(void)modify:(SWAccountConfiguration *)configuration completionHandler:(void(^)(NSError *error))handler {
     self.accountConfiguration = configuration;
     
@@ -351,7 +353,12 @@
     pjsua_call_id callIdentifier;
     pj_str_t uri = [[SWUriFormatter sipUri:URI fromAccount:self] pjString];
     
-    status = pjsua_call_make_call((int)self.accountId, &uri, 0, NULL, NULL, &callIdentifier);
+    pjsua_call_setting callSettings;
+    pjsua_call_setting_default(&callSettings);
+    callSettings.aud_cnt = 1;
+    callSettings.vid_cnt = 0;
+    
+    status = pjsua_call_make_call((int)self.accountId, &uri, &callSettings, NULL, NULL, &callIdentifier);
     
     if (status != PJ_SUCCESS) {
         
@@ -380,11 +387,17 @@
     pjsua_call_vid_strm_op videoOptions;
     videoOptions = PJSUA_CALL_VID_STRM_ADD;
     
-    pjsua_call_vid_strm_op_param videoParam;
+    pjsua_call_setting callSettings;
+    pjsua_call_setting_default(&callSettings);
+    callSettings.aud_cnt = 1;
+    callSettings.vid_cnt = 1;
     
-    pjsua_call_set_vid_strm(callIdentifier, videoOptions, &videoParam);
+#if PJSUA_HAS_VIDEO
+//    pjsua_call_set_vid_strm(callIdentifier, PJSUA_CALL_VID_STRM_ADD, NULL);
+    pjsua_call_set_vid_strm(callIdentifier, PJSUA_CALL_VID_STRM_START_TRANSMIT, NULL);
+#endif
     
-    status = pjsua_call_make_call((int)self.accountId, &uri, 0, NULL, NULL, &callIdentifier);
+    status = pjsua_call_make_call((int)self.accountId, &uri, &callSettings, NULL, NULL, &callIdentifier);
     
     if (status != PJ_SUCCESS) {
         
