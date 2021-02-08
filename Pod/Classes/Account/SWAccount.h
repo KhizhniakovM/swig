@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import "SWAccountProtocol.h"
 
 //TODO: remove account from accounts when disconnected
@@ -42,6 +43,8 @@ typedef NS_ENUM(NSInteger, SWAccountState) {
 
 -(void)makeCall:(NSString *)URI completionHandler:(void(^)(NSError *error))handler;
 -(void)makeVideoCall:(NSString *)URI completionHandler:(void(^)(NSError *error))handler;
+-(void)startPreview:(void(^)(NSError *error, UIView* window))handler;
+-(void)receiveVideoWindow:(void(^)(NSError *error, UIView* window))handler;
 //-(void)answerCall:(NSUInteger)callId completionHandler:(void(^)(NSError *error))handler;
 //-(void)endCall:(NSInteger)callId completionHandler:(void(^)(NSError *error))handler;
 

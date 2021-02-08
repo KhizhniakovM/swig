@@ -21,6 +21,7 @@
 
 @property (nonatomic, strong) SWAccountConfiguration *configuration;
 @property (nonatomic, strong) NSMutableArray *calls;
+@property (nonatomic) pjsua_call_id *callID;
 
 @end
 
@@ -351,6 +352,7 @@
     NSError *error;
     
     pjsua_call_id callIdentifier;
+    _callID = callIdentifier;
     pj_str_t uri = [[SWUriFormatter sipUri:URI fromAccount:self] pjString];
     
     pjsua_call_setting callSettings;
@@ -384,13 +386,13 @@
     pjsua_call_id callIdentifier;
     pj_str_t uri = [[SWUriFormatter sipUri:URI fromAccount:self] pjString];
     
-    pjsua_call_vid_strm_op videoOptions;
-    videoOptions = PJSUA_CALL_VID_STRM_ADD;
+//    pjsua_call_vid_strm_op videoOptions;
+//    videoOptions = PJSUA_CALL_VID_STRM_ADD;
     
     pjsua_call_setting callSettings;
     pjsua_call_setting_default(&callSettings);
     callSettings.aud_cnt = 1;
-    callSettings.vid_cnt = 1;
+    callSettings.vid_cnt = 2;
     
 #if PJSUA_HAS_VIDEO
 //    pjsua_call_set_vid_strm(callIdentifier, PJSUA_CALL_VID_STRM_ADD, NULL);
@@ -400,20 +402,57 @@
     status = pjsua_call_make_call((int)self.accountId, &uri, &callSettings, NULL, NULL, &callIdentifier);
     
     if (status != PJ_SUCCESS) {
-        
         error = [NSError errorWithDomain:@"Error hanging up call" code:0 userInfo:nil];
-    }
-    
-    else {
-        
+    } else {
         SWCall *call = [SWCall callWithId:callIdentifier accountId:self.accountId inBound:NO];
-        
         [self addCall:call];
+        self.callID = callIdentifier;
     }
     
     if (handler) {
         handler(error);
     }
 }
+
+-(void)receiveVideoWindow:(void(^)(NSError *error, UIView* window))handler {
+    int vid_idx;
+    pjsua_vid_win_id wid;
+    pjsua_vid_win_info winInfo;
+    
+    pjsua_call_info ci;
+    pjsua_call_get_info(self.callID, &ci);
+    
+    vid_idx = pjsua_call_get_vid_stream_idx(self.callID);
+    if (vid_idx >= 0) {
+        wid = ci.media[vid_idx].stream.vid.win_in;
+        pjsua_vid_win_get_info(wid, &winInfo);
+        
+        if (handler != nil) {
+            handler(nil, (__bridge UIView *) winInfo.hwnd.info.ios.window);
+        }
+    }
+}
+
+-(void)startPreview:(void(^)(NSError *error, UIView* window))handler {
+    pj_status_t status;
+    NSError *error;
+    pjsua_vid_preview_param previewParam;
+    pjsua_vid_preview_param_default(&previewParam);
+    
+    status = pjsua_vid_preview_start(2, &previewParam);
+    
+    if (status != PJ_SUCCESS) {
+        error = [NSError errorWithDomain:@"Error hanging up call" code:0 userInfo:nil];
+    } else {
+        pjsua_vid_win_info winInfo;
+        pjsua_vid_win_id winId = pjsua_vid_preview_get_win(2);
+        status = pjsua_vid_win_get_info(winId, &winInfo);
+        
+        if (handler != nil) {
+            handler(error, (__bridge UIView *) winInfo.hwnd.info.ios.window);
+        }
+    }
+}
+
 
 @end
