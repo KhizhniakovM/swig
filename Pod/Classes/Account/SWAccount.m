@@ -93,16 +93,16 @@
     acc_cfg.cred_info[0].data_type = PJSIP_CRED_DATA_PLAIN_PASSWD;
     acc_cfg.cred_info[0].data = [self.accountConfiguration.password pjString];
     
-    
     //==========
     acc_cfg.vid_in_auto_show = PJ_TRUE;
     acc_cfg.vid_out_auto_transmit = PJ_TRUE;
+    //==================================================
+    
+    [self setOutgoingVideoStream];
     
     if (!self.accountConfiguration.proxy) {
         acc_cfg.proxy_cnt = 0;
-    }
-    
-    else {
+    } else {
         acc_cfg.proxy_cnt = 1;
         acc_cfg.proxy[0] = [[SWUriFormatter sipUri:[self.accountConfiguration.proxy stringByAppendingString:tcpSuffix]] pjString];
     }
@@ -386,18 +386,10 @@
     pjsua_call_id callIdentifier;
     pj_str_t uri = [[SWUriFormatter sipUri:URI fromAccount:self] pjString];
     
-//    pjsua_call_vid_strm_op videoOptions;
-//    videoOptions = PJSUA_CALL_VID_STRM_ADD;
-    
     pjsua_call_setting callSettings;
     pjsua_call_setting_default(&callSettings);
     callSettings.aud_cnt = 1;
-    callSettings.vid_cnt = 2;
-    
-#if PJSUA_HAS_VIDEO
-//    pjsua_call_set_vid_strm(callIdentifier, PJSUA_CALL_VID_STRM_ADD, NULL);
-    pjsua_call_set_vid_strm(callIdentifier, PJSUA_CALL_VID_STRM_START_TRANSMIT, NULL);
-#endif
+    callSettings.vid_cnt = 1;
     
     status = pjsua_call_make_call((int)self.accountId, &uri, &callSettings, NULL, NULL, &callIdentifier);
     
@@ -412,6 +404,41 @@
     if (handler) {
         handler(error);
     }
+}
+
+- (void)setOutgoingVideoStream {
+    const pj_str_t codec_id = {"H264", 4};
+    int bitrate;
+    pjmedia_vid_codec_param param;
+    pjsua_vid_codec_get_param(&codec_id, &param);
+    param.enc_fmt.det.vid.size.w = 640; //656x656
+    param.enc_fmt.det.vid.size.h = 480;
+    param.enc_fmt.det.vid.fps.num = 25;
+    param.enc_fmt.det.vid.fps.denum = 1;
+    
+    bitrate = 1000 * atoi("512");
+    param.enc_fmt.det.vid.avg_bps = bitrate;
+    param.enc_fmt.det.vid.max_bps = bitrate;
+    
+    param.dec_fmt.det.vid.size.w = 640;
+    param.dec_fmt.det.vid.size.h = 480;
+    param.dec_fmt.det.vid.fps.num = 25;
+    param.dec_fmt.det.vid.fps.denum = 1;
+    
+    param.dec_fmtp.cnt = 2;
+    param.dec_fmtp.param[0].name = pj_str("profile-level-id");
+    param.dec_fmtp.param[0].val = pj_str("42E01E");
+    param.dec_fmtp.param[1].name = pj_str("packetization-mode");
+    param.dec_fmtp.param[1].val = pj_str("1");
+    
+    pjsua_vid_codec_set_param(&codec_id, &param);
+    
+    pjmedia_orient currentOrientation = PJMEDIA_ORIENT_ROTATE_90DEG;
+    for (int i; i < pjsua_vid_dev_count(); i++) {
+        pjsua_vid_dev_set_setting(i, PJMEDIA_VID_DEV_CAP_ORIENTATION, &currentOrientation, PJ_TRUE);
+    }
+    
+    
 }
 
 -(void)receiveVideoWindow:(void(^)(NSError *error, UIView* window))handler {
@@ -438,18 +465,32 @@
     NSError *error;
     pjsua_vid_preview_param previewParam;
     pjsua_vid_preview_param_default(&previewParam);
+    previewParam.wnd_flags = PJMEDIA_VID_DEV_WND_BORDER | PJMEDIA_VID_DEV_WND_RESIZABLE;
     
-    status = pjsua_vid_preview_start(2, &previewParam);
+    status = pjsua_vid_preview_start(PJMEDIA_VID_DEFAULT_CAPTURE_DEV, &previewParam);
     
     if (status != PJ_SUCCESS) {
         error = [NSError errorWithDomain:@"Error hanging up call" code:0 userInfo:nil];
     } else {
         pjsua_vid_win_info winInfo;
-        pjsua_vid_win_id winId = pjsua_vid_preview_get_win(2);
+        pjsua_vid_win_id winId = pjsua_vid_preview_get_win(PJMEDIA_VID_DEFAULT_CAPTURE_DEV);
+        
+        pjmedia_coord rect;
+        rect.x = 0;
+        rect.y = 0;
+        pjmedia_rect_size rect_size;
+        rect_size.h = 170;
+        rect_size.w = 100;
+        pjsua_vid_win_set_size(winId,&rect_size);
+        pjsua_vid_win_set_pos(winId,&rect);
         status = pjsua_vid_win_get_info(winId, &winInfo);
         
         if (handler != nil) {
-            handler(error, (__bridge UIView *) winInfo.hwnd.info.ios.window);
+            UIView *view = (__bridge UIView *)winInfo.hwnd.info.ios.window;
+            winInfo.is_native = PJ_TRUE;
+            winInfo.show = YES;
+            
+            handler(error, view);
         }
     }
 }

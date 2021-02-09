@@ -321,21 +321,25 @@
     pjsua_call_info ci;
     pjsua_call_get_info(self.callId, &ci);
     
-    vid_idx = pjsua_call_get_vid_stream_idx(self.callId);
-    if (vid_idx >= 0) {
-        
-        wid = ci.media[vid_idx].stream.vid.win_in;
-        pjsua_vid_win_get_info(wid, &winInfo);
-    }
-    
     if (status != PJ_SUCCESS) {
         error = [NSError errorWithDomain:@"Error answering up call" code:0 userInfo:nil];
     } else {
         self.missed = NO;
     }
     if (handler) {
-        handler(error, (__bridge UIView *) winInfo.hwnd.info.ios.window);
-    }
+        if (ci.rem_vid_cnt > 0) {
+            vid_idx = pjsua_call_get_vid_stream_idx(self.callId);
+            if (vid_idx >= 0) {
+                
+                wid = ci.media[vid_idx].stream.vid.win_in;
+                pjsua_vid_win_get_info(wid, &winInfo);
+            }
+            handler(error, (__bridge UIView *) winInfo.hwnd.info.ios.window);
+            return;
+        }
+        handler(error, NULL);
+        }
+        
 }
 
 -(void)hangup:(void(^)(NSError *error))handler {
