@@ -43,7 +43,7 @@ typedef NS_ENUM(NSInteger, SWMediaState) {
 @property (nonatomic, readonly) SWCallState callState;
 @property (nonatomic, readonly) SWMediaState mediaState;
 @property (nonatomic, readonly) BOOL inbound;
-@property (nonatomic, readonly) BOOL isVideo;
+@property (nonatomic) BOOL isVideo;
 @property (nonatomic, readonly) BOOL missed;
 @property (nonatomic, readonly) NSDate *date;
 @property (nonatomic, readonly) NSTimeInterval duration; //TODO: update with timer

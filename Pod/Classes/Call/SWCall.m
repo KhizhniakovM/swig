@@ -23,6 +23,7 @@
 @property (nonatomic) BOOL speaker;
 @property (nonatomic) BOOL mute;
 @property (nonatomic) BOOL hold;
+//@property (nonatomic) BOOL isVideo;
 
 @end
 
@@ -58,9 +59,9 @@
     pjsua_call_get_info(callId, &ci);
     
     if (ci.rem_vid_cnt > 0) {
-        _isVideo = true;
+        self.isVideo = true;
     } else {
-        _isVideo = false;
+        self.isVideo = false;
     }
     
     //configure ringback
@@ -328,6 +329,7 @@
     }
     if (handler) {
         if (ci.rem_vid_cnt > 0) {
+            self.isVideo = TRUE;
             vid_idx = pjsua_call_get_vid_stream_idx(self.callId);
             if (vid_idx >= 0) {
                 
@@ -335,7 +337,7 @@
                 pjsua_vid_win_get_info(wid, &winInfo);
             }
             handler(error, (__bridge UIView *) winInfo.hwnd.info.ios.window);
-            return;
+            return; 
         }
         handler(error, NULL);
         }

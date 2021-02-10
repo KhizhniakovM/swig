@@ -98,7 +98,7 @@
     acc_cfg.vid_out_auto_transmit = PJ_TRUE;
     //==================================================
     
-    [self setOutgoingVideoStream];
+    [self configureVideo];
     
     if (!self.accountConfiguration.proxy) {
         acc_cfg.proxy_cnt = 0;
@@ -397,6 +397,7 @@
         error = [NSError errorWithDomain:@"Error hanging up call" code:0 userInfo:nil];
     } else {
         SWCall *call = [SWCall callWithId:callIdentifier accountId:self.accountId inBound:NO];
+        call.isVideo = true;
         [self addCall:call];
         self.callID = callIdentifier;
     }
@@ -406,7 +407,7 @@
     }
 }
 
-- (void)setOutgoingVideoStream {
+- (void)configureVideo {
     const pj_str_t codec_id = {"H264", 4};
     int bitrate;
     pjmedia_vid_codec_param param;
@@ -416,7 +417,7 @@
     param.enc_fmt.det.vid.fps.num = 25;
     param.enc_fmt.det.vid.fps.denum = 1;
     
-    bitrate = 1000 * atoi("512");
+    bitrate = 1500; //* atoi("512");
     param.enc_fmt.det.vid.avg_bps = bitrate;
     param.enc_fmt.det.vid.max_bps = bitrate;
     
@@ -427,14 +428,15 @@
     
     param.dec_fmtp.cnt = 2;
     param.dec_fmtp.param[0].name = pj_str("profile-level-id");
-    param.dec_fmtp.param[0].val = pj_str("42E01E");
+//    param.dec_fmtp.param[0].val = pj_str("42E01E");
+    param.dec_fmtp.param[0].val = pj_str("42801F");
     param.dec_fmtp.param[1].name = pj_str("packetization-mode");
     param.dec_fmtp.param[1].val = pj_str("1");
     
     pjsua_vid_codec_set_param(&codec_id, &param);
     
     pjmedia_orient currentOrientation = PJMEDIA_ORIENT_ROTATE_90DEG;
-    for (int i; i < pjsua_vid_dev_count(); i++) {
+    for (int i = 0; i < pjsua_vid_dev_count(); i++) {
         pjsua_vid_dev_set_setting(i, PJMEDIA_VID_DEV_CAP_ORIENTATION, &currentOrientation, PJ_TRUE);
     }
     
