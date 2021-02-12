@@ -82,7 +82,7 @@
     
     acc_cfg.id = [[SWUriFormatter sipUri:[self.accountConfiguration.address stringByAppendingString:tcpSuffix] withDisplayName:self.accountConfiguration.displayName] pjString];
     acc_cfg.reg_uri = [[SWUriFormatter sipUri:[self.accountConfiguration.domain stringByAppendingString:tcpSuffix]] pjString];
-    acc_cfg.register_on_acc_add = self.accountConfiguration.registerOnAdd ? PJ_TRUE : PJ_FALSE;;
+    acc_cfg.register_on_acc_add = self.accountConfiguration.registerOnAdd ? PJ_TRUE : PJ_FALSE;
     acc_cfg.publish_enabled = self.accountConfiguration.publishEnabled ? PJ_TRUE : PJ_FALSE;
     acc_cfg.reg_timeout = kRegTimeout;
     
@@ -417,7 +417,7 @@
     param.enc_fmt.det.vid.fps.num = 25;
     param.enc_fmt.det.vid.fps.denum = 1;
     
-    bitrate = 1500; //* atoi("512");
+    bitrate = 1000 * atoi("512");
     param.enc_fmt.det.vid.avg_bps = bitrate;
     param.enc_fmt.det.vid.max_bps = bitrate;
     
@@ -428,10 +428,18 @@
     
     param.dec_fmtp.cnt = 2;
     param.dec_fmtp.param[0].name = pj_str("profile-level-id");
-//    param.dec_fmtp.param[0].val = pj_str("42E01E");
-    param.dec_fmtp.param[0].val = pj_str("42801F");
+    param.dec_fmtp.param[0].val = pj_str("42e01e");
     param.dec_fmtp.param[1].name = pj_str("packetization-mode");
     param.dec_fmtp.param[1].val = pj_str("1");
+
+//    param.dec_fmtp.param[2].name = pj_str("mode-set");
+//    param.dec_fmtp.param[2].val  = pj_str("6,7");
+//    param.dec_fmtp.param[2].name = pj_str("octet-align");
+//    param.dec_fmtp.param[2].val  = pj_str("0");
+//    param.dec_fmtp.param[2].name = pj_str("mode");
+//    param.dec_fmtp.param[2].val  = pj_str("20");
+//    param.dec_fmtp.param[2].name = pj_str("annexb");
+//    param.dec_fmtp.param[2].val  = pj_str("no");
     
     pjsua_vid_codec_set_param(&codec_id, &param);
     
@@ -439,8 +447,6 @@
     for (int i = 0; i < pjsua_vid_dev_count(); i++) {
         pjsua_vid_dev_set_setting(i, PJMEDIA_VID_DEV_CAP_ORIENTATION, &currentOrientation, PJ_TRUE);
     }
-    
-    
 }
 
 -(void)receiveVideoWindow:(void(^)(NSError *error, UIView* window))handler {
