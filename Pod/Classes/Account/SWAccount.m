@@ -63,6 +63,17 @@
     [self didChangeValueForKey:@"accountConfiguration"];
 }
 
+- (void)configureAudio {
+    const pj_str_t codec_id = {"opus", 4};
+    pjmedia_codec_param param;
+    pjmedia_codec_opus_config opus_cfg;
+    
+    pjsua_codec_get_param(&codec_id, &param);
+    pjmedia_codec_opus_get_config(&opus_cfg);
+    
+    pjmedia_codec_opus_set_default_param(&opus_cfg, &param);
+}
+
 -(void)configure:(SWAccountConfiguration *)configuration completionHandler:(void(^)(NSError *error))handler {
     
     self.accountConfiguration = configuration;
@@ -99,6 +110,11 @@
     //==================================================
     
     [self configureVideo];
+    
+    // OPUS
+    //==================================================
+    [self configureAudio];
+    //==================================================
     
     if (!self.accountConfiguration.proxy) {
         acc_cfg.proxy_cnt = 0;
