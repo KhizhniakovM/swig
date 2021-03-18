@@ -424,6 +424,10 @@
 }
 
 - (void)configureVideo {
+
+    pj_pool_factory pf;
+    pjmedia_codec_openh264_vid_init(NULL, &pf);
+    
     const pj_str_t codec_id = {"H264", 4};
     int bitrate;
     pjmedia_vid_codec_param param;
@@ -432,16 +436,16 @@
     param.enc_fmt.det.vid.size.h = 480;
     param.enc_fmt.det.vid.fps.num = 25;
     param.enc_fmt.det.vid.fps.denum = 1;
-    
+
     bitrate = 1000 * atoi("512");
     param.enc_fmt.det.vid.avg_bps = bitrate;
     param.enc_fmt.det.vid.max_bps = bitrate;
-    
+
     param.dec_fmt.det.vid.size.w = 640;
     param.dec_fmt.det.vid.size.h = 480;
     param.dec_fmt.det.vid.fps.num = 25;
     param.dec_fmt.det.vid.fps.denum = 1;
-    
+
     param.dec_fmtp.cnt = 2;
     param.dec_fmtp.param[0].name = pj_str("profile-level-id");
     param.dec_fmtp.param[0].val = pj_str("42e01e");

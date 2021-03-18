@@ -385,16 +385,18 @@
 -(void)toggleMute:(void(^)(NSError *error))handler {
     
     pjsua_call_info callInfo;
+    pj_status_t status;
     pjsua_call_get_info((int)self.callId, &callInfo);
-    
+    if (callInfo.media_status == PJSUA_CALL_MEDIA_ACTIVE) {
     if (!self.mute) {
         pjsua_conf_disconnect(0, callInfo.conf_slot);
         self.mute = YES;
-    }
-    
-    else {
+        handler(nil);
+    } else {
         pjsua_conf_connect(0, callInfo.conf_slot);
         self.mute = NO;
+        handler(nil);
+    }
     }
 }
 
