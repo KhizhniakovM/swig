@@ -334,7 +334,11 @@
             if (vid_idx >= 0) {
                 
                 wid = ci.media[vid_idx].stream.vid.win_in;
-                pjsua_vid_win_get_info(wid, &winInfo);
+                if (wid >= 0 && wid < 16) {
+                    pjsua_vid_win_get_info(wid, &winInfo);
+                } else {
+                    error = [NSError errorWithDomain:@"Wrong codec" code:0 userInfo:nil];
+                }
             }
             handler(error, (__bridge UIView *) winInfo.hwnd.info.ios.window);
             return; 

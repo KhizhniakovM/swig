@@ -480,10 +480,11 @@
     vid_idx = pjsua_call_get_vid_stream_idx(self.callID);
     if (vid_idx >= 0) {
         wid = ci.media[vid_idx].stream.vid.win_in;
-        pjsua_vid_win_get_info(wid, &winInfo);
-        
-        if (handler != nil) {
-            handler(nil, (__bridge UIView *) winInfo.hwnd.info.ios.window);
+        if (wid >= 0 && wid < 16) {
+            pjsua_vid_win_get_info(wid, &winInfo);
+            if (handler != nil) {
+                handler(nil, (__bridge UIView *) winInfo.hwnd.info.ios.window);
+            }
         }
     }
 }
