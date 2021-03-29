@@ -23,6 +23,7 @@
 @property (nonatomic) BOOL speaker;
 @property (nonatomic) BOOL mute;
 @property (nonatomic) BOOL hold;
+@property (nonatomic) BOOL isIncoming;
 //@property (nonatomic) BOOL isVideo;
 
 @end
@@ -30,7 +31,7 @@
 @implementation SWCall
 
 -(instancetype)init {
-    
+    self.isIncoming = false;
     NSAssert(NO, @"never call init directly use init with call id");
     
     return nil;
@@ -43,7 +44,7 @@
     if (!self) {
         return nil;
     }
-    
+    self.isIncoming = false;
     _inbound = inbound;
     
     if (_inbound) {
@@ -60,6 +61,7 @@
     
     if (ci.rem_vid_cnt > 0) {
         self.isVideo = true;
+        self.outgoingVideo = YES;
     } else {
         self.isVideo = false;
     }
@@ -306,6 +308,8 @@
 #pragma Call Management
 
 -(void)answer:(void(^)(NSError *error, UIView* window))handler {
+    self.isIncoming = true;
+    
     NSError *setCategoryError;
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
     [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord error:&setCategoryError];
@@ -414,6 +418,27 @@
     else {
         [[AVAudioSession sharedInstance] overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:nil];
         self.speaker = NO;
+    }
+}
+-(void)toggleVideo:(void(^)(NSError *error))handler {
+    pj_status_t status;
+//    pjsua_call_vid_strm_op_param param;
+//    pjsua_call_vid_strm_op_param_default(&param);
+//
+//    if (self.isIncoming == true) {
+//        param.med_idx = 1;
+//    } else {
+//        param.med_idx = -1;
+//    }
+    
+    if (!self.outgoingVideo) {
+        status = pjsua_call_set_vid_strm(self.callId, PJSUA_CALL_VID_STRM_START_TRANSMIT, NULL);
+        self.outgoingVideo = YES;
+        handler(nil);
+    } else {
+        pjsua_call_set_vid_strm(self.callId, PJSUA_CALL_VID_STRM_STOP_TRANSMIT, NULL);
+        self.outgoingVideo = NO;
+        handler(nil);
     }
 }
 

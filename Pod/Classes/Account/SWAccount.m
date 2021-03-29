@@ -414,6 +414,7 @@
     } else {
         SWCall *call = [SWCall callWithId:callIdentifier accountId:self.accountId inBound:NO];
         call.isVideo = true;
+        call.outgoingVideo = YES;
         [self addCall:call];
         self.callID = callIdentifier;
     }
