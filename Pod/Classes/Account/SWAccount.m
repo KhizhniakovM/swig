@@ -414,7 +414,7 @@
     } else {
         SWCall *call = [SWCall callWithId:callIdentifier accountId:self.accountId inBound:NO];
         call.isVideo = true;
-        call.outgoingVideo = YES;
+        call.isOutgoingVideo = YES;
         [self addCall:call];
         self.callID = callIdentifier;
     }
@@ -470,21 +470,24 @@
     }
 }
 
--(void)receiveVideoWindow:(void(^)(NSError *error, UIView* window))handler {
+-(void)receiveVideoWindow:(SWCall *)call completionHandler:(void(^)(NSError *error, UIView* window))handler {
     int vid_idx;
     pjsua_vid_win_id wid;
     pjsua_vid_win_info winInfo;
     
     pjsua_call_info ci;
-    pjsua_call_get_info(self.callID, &ci);
-    
-    vid_idx = pjsua_call_get_vid_stream_idx(self.callID);
-    if (vid_idx >= 0) {
-        wid = ci.media[vid_idx].stream.vid.win_in;
-        if (wid >= 0 && wid < 16) {
-            pjsua_vid_win_get_info(wid, &winInfo);
-            if (handler != nil) {
-                handler(nil, (__bridge UIView *) winInfo.hwnd.info.ios.window);
+    if ([self firstCall] != NULL) {
+        pjsua_call_get_info([self firstCall].callId, &ci);
+        
+        vid_idx = pjsua_call_get_vid_stream_idx([self firstCall].callId);
+        if (vid_idx >= 0) {
+            wid = ci.media[vid_idx].stream.vid.win_in;
+
+            if (wid >= 0 && wid < 16) {
+                pjsua_vid_win_get_info(wid, &winInfo);
+                if (handler != nil) {
+                    handler(nil, (__bridge UIView *) winInfo.hwnd.info.ios.window);
+                }
             }
         }
     }

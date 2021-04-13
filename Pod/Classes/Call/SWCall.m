@@ -22,9 +22,6 @@
 @property (nonatomic, strong) SWRingback *ringback;
 @property (nonatomic) BOOL speaker;
 @property (nonatomic) BOOL mute;
-@property (nonatomic) BOOL hold;
-@property (nonatomic) BOOL isIncoming;
-//@property (nonatomic) BOOL isVideo;
 
 @end
 
@@ -61,9 +58,10 @@
     
     if (ci.rem_vid_cnt > 0) {
         self.isVideo = true;
-        self.outgoingVideo = YES;
+        self.isOutgoingVideo = YES;
     } else {
         self.isVideo = false;
+        self.isOutgoingVideo = NO;
     }
     
     //configure ringback
@@ -318,6 +316,7 @@
     NSError *error;
     
     status = pjsua_call_answer((int)self.callId, PJSIP_SC_OK, NULL, NULL);
+//    status = pjsua_call_answer_with_sdp((int)self.callId, NULL, NULL, PJSIP_SC_OK, NULL, NULL);
     
     int vid_idx;
     pjsua_vid_win_id wid;
@@ -378,15 +377,15 @@
 }
 
 -(void)setHold {
-    if (!self.hold) {
+    if (!self.isHold) {
         pjsua_call_set_hold((int)self.callId, NULL);
-        self.hold = YES;
+        self.isHold = YES;
     } else {
         pjsua_call_update((int)self.callId, PJSUA_CALL_UNHOLD, NULL);
-        self.hold = NO;
+        self.isHold = NO;
     }
 }
-//-(void)reinvite:(void(^)(NSError *error))handler;
+//-(void)reinvite:(void(^)(NSError *error))handler {}
 //-(void)transferCall:(NSString *)destination completionHandler:(void(^)(NSError *error))handler;
 //-(void)replaceCall:(SWCall *)call completionHandler:(void (^)(NSError *))handler;
 
@@ -421,24 +420,36 @@
     }
 }
 -(void)toggleVideo:(void(^)(NSError *error))handler {
-    pj_status_t status;
-//    pjsua_call_vid_strm_op_param param;
-//    pjsua_call_vid_strm_op_param_default(&param);
-//
-//    if (self.isIncoming == true) {
-//        param.med_idx = 1;
-//    } else {
-//        param.med_idx = -1;
-//    }
-    
-    if (!self.outgoingVideo) {
-        status = pjsua_call_set_vid_strm(self.callId, PJSUA_CALL_VID_STRM_START_TRANSMIT, NULL);
-        self.outgoingVideo = YES;
+    if (!self.isOutgoingVideo) {
+        [self turnOnVideo];
+        self.isOutgoingVideo = YES;
         handler(nil);
     } else {
-        pjsua_call_set_vid_strm(self.callId, PJSUA_CALL_VID_STRM_STOP_TRANSMIT, NULL);
-        self.outgoingVideo = NO;
+        [self turnOffVideo];
+        self.isOutgoingVideo = NO;
         handler(nil);
+    }
+}
+-(void)turnOffVideo {
+    pjsua_call_set_vid_strm(self.callId, PJSUA_CALL_VID_STRM_STOP_TRANSMIT, NULL);
+}
+-(void)turnOnVideo {
+    pjsua_call_set_vid_strm(self.callId, PJSUA_CALL_VID_STRM_START_TRANSMIT, NULL);
+}
+
+-(void)changeToVideo:(void(^)(NSError *error))handler {
+    pj_status_t status;
+    NSError *error;
+    
+    pjsua_call_setting callSettings;
+    pjsua_call_setting_default(&callSettings);
+    callSettings.aud_cnt = 1;
+    callSettings.vid_cnt = 1;
+    
+    status = pjsua_call_reinvite2(self.callId, &callSettings, NULL);
+    
+    if (status == PJ_SUCCESS) {
+        handler(error);
     }
 }
 

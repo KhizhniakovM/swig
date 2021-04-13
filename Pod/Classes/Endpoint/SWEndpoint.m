@@ -25,6 +25,7 @@
 
 typedef void (^SWAccountStateChangeBlock)(SWAccount *account);
 typedef void (^SWIncomingCallBlock)(SWAccount *account, SWCall *call);
+typedef void (^SWOnReinviteBlock)(SWAccount *account, SWCall *call);
 typedef void (^SWCallStateChangeBlock)(SWAccount *account, SWCall *call);
 typedef void (^SWCallMediaStateChangeBlock)(SWAccount *account, SWCall *call);
 
@@ -34,6 +35,7 @@ static pj_thread_t *thread;
 //callback functions
 
 static void SWOnIncomingCall(pjsua_acc_id acc_id, pjsua_call_id call_id, pjsip_rx_data *rdata);
+static void SWOnReinvite(pjsua_call_id call_id, pjsua_call_info *call_info);
 
 static void SWOnCallMediaState(pjsua_call_id call_id);
 
@@ -50,6 +52,7 @@ static void SWOnNatDetect(const pj_stun_nat_detect_result *res);
 @interface SWEndpoint ()
 
 @property (nonatomic, copy) SWIncomingCallBlock incomingCallBlock;
+@property (nonatomic, copy) SWOnReinviteBlock reinviteBlock;
 @property (nonatomic, copy) SWAccountStateChangeBlock accountStateChangeBlock;
 @property (nonatomic, copy) SWCallStateChangeBlock callStateChangeBlock;
 @property (nonatomic, copy) SWCallMediaStateChangeBlock callMediaStateChangeBlock;
@@ -296,6 +299,8 @@ static SWEndpoint *_sharedEndpoint = nil;
     pjsua_logging_config_default(&log_cfg);
     pjsua_media_config_default(&media_cfg);
     
+    ua_cfg.cb.on_call_rx_offer = &SWOnReinvite;
+//    ua_cfg.cb.on_call_rx_reinvite = &SWOnReinvite;
     ua_cfg.cb.on_incoming_call = &SWOnIncomingCall;
     ua_cfg.cb.on_call_media_state = &SWOnCallMediaState;
     ua_cfg.cb.on_call_state = &SWOnCallState;
@@ -543,7 +548,6 @@ static SWEndpoint *_sharedEndpoint = nil;
     }
 }
 
-
 #pragma Block Parameters
 
 -(void)setAccountStateChangeBlock:(void(^)(SWAccount *account))accountStateChangeBlock {
@@ -554,6 +558,10 @@ static SWEndpoint *_sharedEndpoint = nil;
 -(void)setIncomingCallBlock:(void(^)(SWAccount *account, SWCall *call))incomingCallBlock {
     
     _incomingCallBlock = incomingCallBlock;
+}
+-(void)setReinviteBlock:(void(^)(SWAccount *account, SWCall *call))reinviteBlock {
+    
+    _reinviteBlock = reinviteBlock;
 }
 
 -(void)setCallStateChangeBlock:(void(^)(SWAccount *account, SWCall *call))callStateChangeBlock {
@@ -604,6 +612,27 @@ static void SWOnIncomingCall(pjsua_acc_id acc_id, pjsua_call_id call_id, pjsip_r
             
             if ([SWEndpoint sharedEndpoint].incomingCallBlock) {
                 [SWEndpoint sharedEndpoint].incomingCallBlock(account, call);
+            }
+        }
+    }
+}
+
+static void SWOnReinvite(pjsua_call_id call_id, pjsua_call_info *call_info) {
+    pjsua_call_info callInfo;
+    pjsua_call_get_info(call_id, &callInfo);
+    
+    SWAccount *account = [[SWEndpoint sharedEndpoint] lookupAccount:callInfo.acc_id];
+    
+    if (account) {
+        
+        SWCall *call = [account lookupCall:call_id];
+        
+        if (call) {
+            
+            if ([SWEndpoint sharedEndpoint].reinviteBlock) {
+                [SWEndpoint sharedEndpoint].reinviteBlock(account, call);
+//                pjmedia_sdp_session sdp;
+//                pjsua_call_answer_with_sdp(call_id, &sdp, NULL, 400, NULL, NULL);
             }
         }
     }

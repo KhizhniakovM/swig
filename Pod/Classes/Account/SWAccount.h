@@ -44,7 +44,8 @@ typedef NS_ENUM(NSInteger, SWAccountState) {
 -(void)makeCall:(NSString *)URI completionHandler:(void(^)(NSError *error))handler;
 -(void)makeVideoCall:(NSString *)URI completionHandler:(void(^)(NSError *error))handler;
 -(void)startPreview:(void(^)(NSError *error, UIView* window))handler;
--(void)receiveVideoWindow:(void(^)(NSError *error, UIView* window))handler;
+-(void)receiveVideoWindow:(SWCall *)call completionHandler:(void(^)(NSError *error, UIView* window))handler;
+//-(void)changeToVideo:(void(^)(NSError *error, UIView* window))handler;
 //-(void)answerCall:(NSUInteger)callId completionHandler:(void(^)(NSError *error))handler;
 //-(void)endCall:(NSInteger)callId completionHandler:(void(^)(NSError *error))handler;
 
